@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd                  # Applications always live in the argocd namespace
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 92.15.0          # pinned chart version
+    helm:
+      valuesObject:                  # same as a values.yaml, but inline
+        grafana:
+          adminPassword: lab-admin   # lab only: never commit real passwords to Git
+          service:
+            type: NodePort
+            nodePort: 30001          # → http://localhost:30001
+        prometheus:
+          service:
+            type: NodePort
+            nodePort: 30002          # → http://localhost:30002
+        # k3s runs these components inside one binary, so there is nothing to scrape
+        kubeControllerManager:
+          enabled: false
+        kubeScheduler:
+          enabled: false
+        kubeProxy:
+          enabled: false
+        kubeEtcd:
+          enabled: false
+  destination:
+    server: https://kubernetes.default.svc   # "this cluster"
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true        # delete resources that were removed from the desired state
+      selfHeal: true     # undo manual changes (drift)
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true   # required: this chart's CRDs are too big for a normal apply

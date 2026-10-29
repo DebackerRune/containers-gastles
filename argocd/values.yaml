@@ -1,0 +1,8 @@
+server:
+  service:
+    type: NodePort          # reach the UI from your browser
+    nodePortHttp: 30000     # → http://localhost:30000
+
+configs:
+  params:
+    server.insecure: true   # serve plain HTTP (fine for a local lab)
